@@ -1,0 +1,7 @@
+
+{% ckan_extends %}
+
+{% block package_basic_fields_custom %}
+    {% set dashboard_attrs = {'data-module': 'autocomplete', 'data-module-source': '/api/3/wirecloud_view/dashboard_autocomplete?incomplete=?'} %}
+    {{ form.input('dashboard', id='field-dashboard', label=_('Dashboard'), placeholder=_('eg. myuser/dashboard'), value=data.dashboard, error=errors.dashboard, classes=['control-full'], attrs=dashboard_attrs) }}
+{% endblock %}

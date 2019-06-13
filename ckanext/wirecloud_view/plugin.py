@@ -26,7 +26,7 @@ import re
 from urlparse import urljoin
 
 import ckan.plugins as p
-from ckan.plugins.toolkit import Invalid
+from ckan.plugins import toolkit as tk
 from requests_oauthlib import OAuth2Session
 
 
@@ -46,17 +46,18 @@ def process_dashboardid(dashboardid, context):
     dashboardid = dashboardid.strip()
 
     if not DASHBOARD_RE.match(dashboardid):
-        raise Invalid('This field must contain a valid dashboard id.')
+        raise tk.Invalid('This field must contain a valid dashboard id.')
 
     return dashboardid
 
 
-class WirecloudView(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
+class WirecloudView(p.SingletonPlugin, tk.DefaultDatasetForm):
 
     p.implements(p.IConfigurable)
     p.implements(p.IConfigurer)
     p.implements(p.IResourceView)
     p.implements(p.ITemplateHelpers)
+    p.implements(p.IDatasetForm)
     p.implements(p.IRoutes, inherit=True)
 
     def configure(self, config):
@@ -66,15 +67,59 @@ class WirecloudView(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
         if self.wirecloud_url[-1:] != "/":
             self.wirecloud_url += "/"
 
+    # IDatasetForm
+
+    def _modify_package_schema(self, schema):
+        schema.update({
+            'dashboard': [tk.get_validator('ignore_missing'),
+                          tk.get_converter('convert_to_extras')]
+        })
+        return schema
+
+    def create_package_schema(self):
+        # let's grab the default schema in our plugin
+        schema = super(WirecloudView, self).create_package_schema()
+        # our custom field or fields
+        schema = self._modify_package_schema(schema)
+        return schema
+
+    def update_package_schema(self):
+        schema = super(WirecloudView, self).update_package_schema()
+        # our custom field or fields
+        schema = self._modify_package_schema(schema)
+        return schema
+
+    def show_package_schema(self):
+        schema = super(WirecloudView, self).show_package_schema()
+        schema.update({
+            'dashboard': [tk.get_converter('convert_from_extras'),
+                          tk.get_validator('ignore_missing')]
+        })
+        return schema
+
+    def is_fallback(self):
+        # Return True to register this plugin as the default handler for
+        # package types not handled by any other IDatasetForm plugin.
+        return True
+
+    def package_types(self):
+        # This plugin doesn't handle any special package types, it just
+        # registers itself as the default (above).
+        return []
+
+    # IConfigurer
+
     def update_config(self, config):
-        p.toolkit.add_template_directory(config, 'templates')
-        p.toolkit.add_resource(b'fanstatic', b'wirecloud_view')
+        tk.add_template_directory(config, 'templates')
+        tk.add_resource(b'fanstatic', b'wirecloud_view')
+
+    # IResourceView
 
     def info(self):
         return {
             'name': 'wirecloud_view',
             'title': 'WireCloud',
-            'icon': 'bar-chart-o' if p.toolkit.check_ckan_version(min_version='2.7') else 'bar-chart',
+            'icon': 'bar-chart-o' if tk.check_ckan_version(min_version='2.7') else 'bar-chart',
             'schema': {
                 'dashboard': [unicode, process_dashboardid],
             },
@@ -93,12 +138,16 @@ class WirecloudView(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
     def form_template(self, context, data_dict):
         return 'wirecloud_form.html'
 
+    # ITemplateHelpers
+
     def get_helpers(self):
 
         return {
             'get_editor_url': lambda: urljoin(self.wirecloud_url, self.editor_dashboard),
             'get_dashboard_url': lambda dashboard, resourceid, ckanserver: urljoin(self.wirecloud_url, dashboard) + '?mode=embedded&resourceid=' + resourceid + '&ckanserver=' + ckanserver
         }
+
+    # I
 
     def before_map(self, m):
 
@@ -107,3 +156,4 @@ class WirecloudView(p.SingletonPlugin, p.toolkit.DefaultDatasetForm):
                   action='get_workspaces', conditions=GET)
 
         return m
+

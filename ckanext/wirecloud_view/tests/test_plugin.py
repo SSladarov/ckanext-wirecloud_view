@@ -20,14 +20,18 @@
 
 import unittest
 
-from ckan.plugins.toolkit import Invalid
+from ckan.plugins import toolkit as tk
 from mock import MagicMock, patch
+from parameterized import parameterized
 import six
 
 from ckanext.wirecloud_view import plugin
 
 
 class WirecloudViewPluginTest(unittest.TestCase):
+
+    def setUp(self):
+        self.WirecloudView = plugin.WirecloudView()
 
     def test_process_dashboardid_should_strip(self):
 
@@ -39,7 +43,7 @@ class WirecloudViewPluginTest(unittest.TestCase):
 
     def test_process_dashboardid_should_raise_invalid_exception(self):
 
-        with self.assertRaises(Invalid):
+        with self.assertRaises(tk.Invalid):
             plugin.process_dashboardid("a/b/c", {})
 
     def test_can_view_returns_false(self):
@@ -64,3 +68,44 @@ class WirecloudViewPluginTest(unittest.TestCase):
     def test_view_template(self):
         instance = plugin.WirecloudView()
         self.assertEqual(instance.view_template(None, None), "wirecloud_view.html")
+
+    #Schemas Dataset
+
+    def _check_fields(self, schema, fields):
+        for field in fields:
+            for checker_validator in fields[field]:
+                self.assertTrue(checker_validator in schema[field])
+            self.assertEquals(len(fields[field]), len(schema[field]))
+
+    @parameterized.expand([
+        ('create_package_schema'),
+        ('update_package_schema'),
+    ])
+    def test_schema_create_update(self, function_name):
+
+        function = getattr(self.WirecloudView, function_name)
+        returned_schema = function()
+
+        fields = {
+            'dashboard': [tk.get_validator('ignore_missing'),
+                          tk.get_converter('convert_to_extras')]
+        }
+
+        self._check_fields(returned_schema, fields)
+
+    def test_schema_show(self):
+
+        returned_schema = self.WirecloudView.show_package_schema()
+
+        fields = {
+            'dashboard': [tk.get_converter('convert_from_extras'),
+                          tk.get_validator('ignore_missing')]
+        }
+
+        self._check_fields(returned_schema, fields)
+
+    def test_fallback(self):
+        self.assertEquals(True, self.WirecloudView.is_fallback())
+
+    def test_package_types(self):
+        self.assertEquals([], self.WirecloudView.package_types())

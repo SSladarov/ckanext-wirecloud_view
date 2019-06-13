@@ -1,0 +1,7 @@
+
+{% block dashboard %}
+<section class="dashboard">
+    <h3>{{ _('Dashboard') }}</h3>
+    <iframe style="margin:auto; height:700px; display:block; width:100%;" src="{{ h.get_dashboard_url(pkg_dict.get('dashboard'), pkg_dict.get('id'), "://".join(h.get_site_protocol_and_host())) }}" frameborder="0" allowfullscreen="allowfullscreen"></iframe>
+</section>
+{% endblock %}
