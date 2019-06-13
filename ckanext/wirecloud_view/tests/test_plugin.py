@@ -87,7 +87,8 @@ class WirecloudViewPluginTest(unittest.TestCase):
         returned_schema = function()
 
         fields = {
-            'dashboard': [tk.get_validator('ignore_missing'),
+            'dashboard': [plugin.process_dashboardid,
+                          tk.get_validator('ignore_missing'),
                           tk.get_converter('convert_to_extras')]
         }
 

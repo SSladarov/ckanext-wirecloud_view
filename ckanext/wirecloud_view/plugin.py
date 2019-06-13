@@ -71,7 +71,8 @@ class WirecloudView(p.SingletonPlugin, tk.DefaultDatasetForm):
 
     def _modify_package_schema(self, schema):
         schema.update({
-            'dashboard': [tk.get_validator('ignore_missing'),
+            'dashboard': [process_dashboardid,
+                          tk.get_validator('ignore_missing'),
                           tk.get_converter('convert_to_extras')]
         })
         return schema
