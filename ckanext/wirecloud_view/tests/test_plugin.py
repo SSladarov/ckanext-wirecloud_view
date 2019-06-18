@@ -33,18 +33,31 @@ class WirecloudViewPluginTest(unittest.TestCase):
     def setUp(self):
         self.WirecloudView = plugin.WirecloudView()
 
-    def test_process_dashboardid_should_strip(self):
+    def test_process_dashboardid_resource_should_strip(self):
 
-        self.assertEqual(plugin.process_dashboardid("  owner/name ", {}), "owner/name")
+        self.assertEqual(plugin.process_dashboardid_resource("  owner/name ", {}), "owner/name")
 
-    def test_process_dashboardid_should_leave_untouched_valid_dashboard_ids(self):
+    def test_process_dashboardid_resource_should_leave_untouched_valid_dashboard_ids(self):
 
-        self.assertEqual(plugin.process_dashboardid("owner/name", {}), "owner/name")
+        self.assertEqual(plugin.process_dashboardid_resource("owner/name", {}), "owner/name")
 
-    def test_process_dashboardid_should_raise_invalid_exception(self):
+    def test_process_dashboardid_resource_should_raise_invalid_exception(self):
 
         with self.assertRaises(tk.Invalid):
-            plugin.process_dashboardid("a/b/c", {})
+            plugin.process_dashboardid_resource("a/b/c", {})
+
+    def test_process_dashboardid_dataset_should_strip(self):
+
+        self.assertEqual(plugin.process_dashboardid_dataset("  owner/name ", {}), "owner/name")
+
+    def test_process_dashboardid_dataset_should_leave_untouched_valid_dashboard_ids(self):
+
+        self.assertEqual(plugin.process_dashboardid_dataset("owner/name", {}), "owner/name")
+
+    def test_process_dashboardid_dataset_should_raise_invalid_exception(self):
+
+        with self.assertRaises(tk.Invalid):
+            plugin.process_dashboardid_dataset("a/b/c", {})
 
     def test_can_view_returns_false(self):
         instance = plugin.WirecloudView()
@@ -87,7 +100,7 @@ class WirecloudViewPluginTest(unittest.TestCase):
         returned_schema = function()
 
         fields = {
-            'dashboard': [plugin.process_dashboardid,
+            'dashboard': [plugin.process_dashboardid_dataset,
                           tk.get_validator('ignore_missing'),
                           tk.get_converter('convert_to_extras')]
         }

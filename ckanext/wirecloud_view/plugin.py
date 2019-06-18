@@ -41,9 +41,22 @@ POST = dict(method=['POST'])
 DELETE = dict(method=['DELETE'])
 
 
-def process_dashboardid(dashboardid, context):
+def process_dashboardid_resource(dashboardid, context):
 
     dashboardid = dashboardid.strip()
+
+    if not DASHBOARD_RE.match(dashboardid):
+        raise tk.Invalid('This field must contain a valid dashboard id.')
+
+    return dashboardid
+
+
+def process_dashboardid_dataset(dashboardid, context):
+
+    dashboardid = dashboardid.strip()
+
+    if not dashboardid:
+        return dashboardid
 
     if not DASHBOARD_RE.match(dashboardid):
         raise tk.Invalid('This field must contain a valid dashboard id.')
@@ -71,7 +84,7 @@ class WirecloudView(p.SingletonPlugin, tk.DefaultDatasetForm):
 
     def _modify_package_schema(self, schema):
         schema.update({
-            'dashboard': [process_dashboardid,
+            'dashboard': [process_dashboardid_dataset,
                           tk.get_validator('ignore_missing'),
                           tk.get_converter('convert_to_extras')]
         })
@@ -122,7 +135,7 @@ class WirecloudView(p.SingletonPlugin, tk.DefaultDatasetForm):
             'title': 'WireCloud',
             'icon': 'bar-chart-o' if tk.check_ckan_version(min_version='2.7') else 'bar-chart',
             'schema': {
-                'dashboard': [unicode, process_dashboardid],
+                'dashboard': [unicode, process_dashboardid_resource],
             },
             'iframed': False,
             'always_available': True,
